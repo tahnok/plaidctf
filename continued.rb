@@ -1,4 +1,4 @@
-require 'pry'
+require 'openssl'
 
 def euclid(a,b)
   if b > a
@@ -25,7 +25,6 @@ def continued(a,b)
     divisor = b
     remainder = 1
     while remainder != 0
-      puts target, divisor
       component, remainder = target.divmod(divisor)
       components << component
       divisor,target = remainder,divisor
@@ -51,4 +50,42 @@ def get_convergents(e,n)
   end
 end
 
-binding.pry
+def get_possible_keys(e,n)
+  max_key = (n**(1.0/4))/3
+  get_convergents(e,n).map do |c|
+    c.denominator
+  end.select do |key|
+    key < max_key
+  end
+end
+
+raw = File.read("captured_a4ff19205b4a6b0a221111296439b9c7").split("\n")
+raw = raw[1..raw.length] #drop {N, e, c}
+ 
+messages = []
+ 
+raw.each do |raw_line|
+  temp = raw_line.split(/({| : |})/)
+  messages << {
+    n: temp[2].to_i(16),
+    e: temp[4].to_i(16),
+    c: temp[6].to_i(16)
+  }
+end
+
+messages.each_with_index do |message,i|
+  $stderr.puts "trying #{i}"
+  n = message[:n]
+  e = message[:e]
+  c = message[:c]
+
+  possible_keys = get_possible_keys(e,n)
+  possible_keys.map do |key|
+    [c.to_bn.mod_exp(key,n).to_s(16)].pack("H*")
+  end.select do |plaintext|
+    !(plaintext =~ /[^[:print:]]/)
+  end.each do |text|
+    puts text
+  end
+end
+
