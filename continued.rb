@@ -42,4 +42,13 @@ def continued_to_convergent(continued_list)
   end
 end
 
+def get_convergents(e,n)
+  continued_list = continued(e,n)
+  convergents = (1..continued_list.size).map do |length|
+    continued_list.first(length)
+  end.map do |list|
+    continued_to_convergent(list)
+  end
+end
+
 binding.pry
